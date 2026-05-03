@@ -1,0 +1,46 @@
+name: Task Manager CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install All Dependencies
+        run: npm run install:all
+
+      # Task 2: Linting
+      - name: Lint Backend
+        working-directory: ./backend
+        run: npm run lint --if-present
+
+      - name: Lint Frontend
+        working-directory: ./frontend
+        run: npm run lint --if-present
+
+      # Task 2: Testing
+      - name: Test Backend
+        working-directory: ./backend
+        run: npm run test:backend --if-present
+
+      - name: Test Frontend
+        working-directory: ./frontend
+        run: npm run test:frontend --if-present
+
+      # Task 3: Security Checks
+      - name: Run NPM Audit
+        run: npm audit --audit-level=high
