@@ -18,7 +18,6 @@ The app has been implemented in a monorepo structure with separate backend and f
 **Backend:**
 - Node.js with [Express](https://expressjs.com/)
 - [TypeScript](https://www.typescriptlang.org/)
-- [Sequelize](https://sequelize.org/) ORM
 - [PostgreSQL database](https://www.postgresql.org/)
 - [JWT authentication](https://jwt.io/)
 
@@ -26,7 +25,6 @@ The app has been implemented in a monorepo structure with separate backend and f
 - [React 19](https://react.dev) & [Vite](https://vitejs.dev/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [React Router](https://reactrouter.com/) for routing
-- [Axios](https://axios-http.com/) for API calls
 
 You do not need prior experience with all these technologies, but familiarity with JavaScript/TypeScript and web development concepts will be helpful. The focus of this project is on DevOps practices rather than developing the application.
 
@@ -177,8 +175,8 @@ JWT_EXPIRES_IN=7d
 # URL of the frontend application (used to allow CORS):
 FRONTEND_URL=http://localhost:5173
 
-# Set to true during initial production deployment to sync the database.
-# Switch back to false after the database has been synchronized:
+# Set to true during initial production deployment to create the database
+# tables (runs backend/src/db/schema.sql). Switch back to false afterwards:
 DB_SYNC=false
 ```
 

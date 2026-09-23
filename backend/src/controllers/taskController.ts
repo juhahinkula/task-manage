@@ -1,8 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { body } from 'express-validator';
 import { AuthRequest, CreateTaskDTO, UpdateTaskDTO } from '../types/index.js';
-import Task from '../models/Task.js';
-import { Op } from 'sequelize';
+import { findTasks, findTaskById, createTask as createTaskRecord, updateTask as updateTaskRecord, deleteTask as deleteTaskRecord } from '../models/Task.js';
 
 // Validation rules
 export const createTaskValidation = [
@@ -10,7 +9,7 @@ export const createTaskValidation = [
   body('description').optional().trim(),
   body('status').optional().isIn(['todo', 'in-progress', 'done']),
   body('priority').optional().isIn(['low', 'medium', 'high']),
-  body('dueDate').optional().isISO8601().withMessage('Invalid date format')
+  body('dueDate').notEmpty().withMessage('Due date is required').bail().isISO8601().withMessage('Invalid date format')
 ];
 
 export const updateTaskValidation = [
@@ -18,8 +17,13 @@ export const updateTaskValidation = [
   body('description').optional().trim(),
   body('status').optional().isIn(['todo', 'in-progress', 'done']),
   body('priority').optional().isIn(['low', 'medium', 'high']),
-  body('dueDate').optional().isISO8601().withMessage('Invalid date format')
+  body('dueDate').optional({ checkFalsy: true }).isISO8601().withMessage('Invalid date format')
 ];
+
+const parseTaskId = (rawId: string | string[]): number | null => {
+  const id = Number(rawId);
+  return Number.isInteger(id) ? id : null;
+};
 
 // Controllers
 export const getTasks = async (
@@ -28,31 +32,14 @@ export const getTasks = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { status, priority, search, sortBy = 'createdAt', order = 'DESC' } = req.query;
+    const { status, priority, search, sortBy, order } = req.query;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {
-      userId: req.user!.id
-    };
-
-    if (status) {
-      where.status = status;
-    }
-
-    if (priority) {
-      where.priority = priority;
-    }
-
-    if (search) {
-      where[Op.or] = [
-        { title: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } }
-      ];
-    }
-
-    const tasks = await Task.findAll({
-      where,
-      order: [[sortBy as string, order as string]]
+    const tasks = await findTasks(req.user!.id, {
+      status: status as string | undefined,
+      priority: priority as string | undefined,
+      search: search as string | undefined,
+      sortBy: sortBy as string | undefined,
+      order: order as string | undefined
     });
 
     res.status(200).json({
@@ -71,12 +58,8 @@ export const getTask = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const task = await Task.findOne({
-      where: {
-        id: req.params.id,
-        userId: req.user!.id
-      }
-    });
+    const id = parseTaskId(req.params.id);
+    const task = id === null ? null : await findTaskById(id, req.user!.id);
 
     if (!task) {
       res.status(404).json({
@@ -103,10 +86,7 @@ export const createTask = async (
   try {
     const taskData: CreateTaskDTO = req.body;
 
-    const task = await Task.create({
-      ...taskData,
-      userId: req.user!.id
-    });
+    const task = await createTaskRecord(req.user!.id, taskData);
 
     res.status(201).json({
       success: true,
@@ -123,12 +103,9 @@ export const updateTask = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const task = await Task.findOne({
-      where: {
-        id: req.params.id,
-        userId: req.user!.id
-      }
-    });
+    const id = parseTaskId(req.params.id);
+    const updateData: UpdateTaskDTO = req.body;
+    const task = id === null ? null : await updateTaskRecord(id, req.user!.id, updateData);
 
     if (!task) {
       res.status(404).json({
@@ -137,9 +114,6 @@ export const updateTask = async (
       });
       return;
     }
-
-    const updateData: UpdateTaskDTO = req.body;
-    await task.update(updateData);
 
     res.status(200).json({
       success: true,
@@ -156,22 +130,16 @@ export const deleteTask = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const task = await Task.findOne({
-      where: {
-        id: req.params.id,
-        userId: req.user!.id
-      }
-    });
+    const id = parseTaskId(req.params.id);
+    const deleted = id === null ? false : await deleteTaskRecord(id, req.user!.id);
 
-    if (!task) {
+    if (!deleted) {
       res.status(404).json({
         success: false,
         message: 'Task not found'
       });
       return;
     }
-
-    await task.destroy();
 
     res.status(200).json({
       success: true,

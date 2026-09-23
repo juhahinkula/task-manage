@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { AuthRequest, CreateUserDTO, LoginDTO } from '../types/index.js';
-import User from '../models/User.js';
+import { findUserByEmail, createUser, comparePassword, findPublicUserById } from '../models/User.js';
 import { config } from '../config/config.js';
 
 // Validation rules
@@ -27,7 +27,7 @@ export const register = async (
     const { name, email, password }: CreateUserDTO = req.body;
 
     // Check if user exists
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await findUserByEmail(email);
     if (existingUser) {
       res.status(400).json({
         success: false,
@@ -37,7 +37,7 @@ export const register = async (
     }
 
     // Create user
-    const user = await User.create({
+    const user = await createUser({
       name,
       email,
       password
@@ -73,7 +73,7 @@ export const login = async (
     const { email, password }: LoginDTO = req.body;
 
     // Check if user exists
-    const user = await User.findOne({ where: { email } });
+    const user = await findUserByEmail(email);
     if (!user) {
       res.status(401).json({
         success: false,
@@ -83,7 +83,7 @@ export const login = async (
     }
 
     // Check password
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
       res.status(401).json({
         success: false,
@@ -119,9 +119,7 @@ export const getMe = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const user = await User.findByPk(req.user!.id, {
-      attributes: { exclude: ['password'] }
-    });
+    const user = await findPublicUserById(req.user!.id);
 
     if (!user) {
       res.status(404).json({

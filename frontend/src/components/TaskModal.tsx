@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Task, CreateTaskData } from '../types';
 
 type TaskModalProps = {
@@ -7,28 +7,28 @@ type TaskModalProps = {
   onClose: () => void;
 }
 
+const emptyTask: CreateTaskData = {
+  title: '',
+  description: '',
+  status: 'todo',
+  priority: 'medium',
+  dueDate: ''
+};
+
 function TaskModal({ task, onSave, onClose }: TaskModalProps) {
-  const [formData, setFormData] = useState<CreateTaskData>({
-    title: '',
-    description: '',
-    status: 'todo',
-    priority: 'medium',
-    dueDate: ''
-  });
+  const [formData, setFormData] = useState<CreateTaskData>(() =>
+    task
+      ? {
+          title: task.title,
+          description: task.description || '',
+          status: task.status,
+          priority: task.priority,
+          dueDate: task.dueDate ? task.dueDate.split('T')[0] : ''
+        }
+      : emptyTask
+  );
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (task) {
-      setFormData({
-        title: task.title,
-        description: task.description || '',
-        status: task.status,
-        priority: task.priority,
-        dueDate: task.dueDate ? task.dueDate.split('T')[0] : ''
-      });
-    }
-  }, [task]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -37,7 +37,7 @@ function TaskModal({ task, onSave, onClose }: TaskModalProps) {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -121,7 +121,7 @@ function TaskModal({ task, onSave, onClose }: TaskModalProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="dueDate">Due Date</label>
+            <label htmlFor="dueDate">Due Date *</label>
             <input
               type="date"
               id="dueDate"
@@ -129,6 +129,7 @@ function TaskModal({ task, onSave, onClose }: TaskModalProps) {
               className="form-control"
               value={formData.dueDate}
               onChange={handleChange}
+              required
             />
           </div>
 

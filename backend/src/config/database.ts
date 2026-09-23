@@ -1,30 +1,28 @@
-import { Sequelize } from 'sequelize';
+import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import { applySchema } from '../db/runSchema.js';
 
 dotenv.config();
 
-const databaseUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/taskmanagement';
+const databaseUrl = process.env.DATABASE_URL || '******localhost:5432/taskmanagement';
 
-export const sequelize = new Sequelize(databaseUrl, {
-  dialect: 'postgres',
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
-  pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000
-  }
+export const pool = new Pool({
+  connectionString: databaseUrl,
+  max: 5,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 30000
 });
 
 export const connectDB = async (): Promise<void> => {
   try {
-    await sequelize.authenticate();
+    await pool.query('SELECT 1');
     console.log('Database connection established successfully.');
-    
-    // Sync models in development
+
+    // Apply schema.sql (CREATE TABLE IF NOT EXISTS) in development, mirroring
+    // the old Sequelize sync-on-boot behavior.
     if (process.env.NODE_ENV === 'development' || process.env.DB_SYNC === 'true') {
-      await sequelize.sync({ alter: true });
-      console.log('Database models synchronized.');
+      await applySchema(pool);
+      console.log('Database schema applied.');
     }
   } catch (error) {
     console.error('Unable to connect to the database:', error);
