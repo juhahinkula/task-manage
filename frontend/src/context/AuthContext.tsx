@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, ReactNode } from 'react';
 import { User } from '../types';
 import { authService } from '../services/authService';
 import { AuthContext } from './AuthContextDefinition';
@@ -8,15 +8,8 @@ type AuthProviderProps = {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    const isAuth = authService.isAuthenticated();
-    setUser(currentUser);
-    setIsAuthenticated(isAuth);
-  }, []);
+  const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
+  const [isAuthenticated, setIsAuthenticated] = useState(() => authService.isAuthenticated());
 
   const login = (userData: User) => {
     const token = localStorage.getItem('token');

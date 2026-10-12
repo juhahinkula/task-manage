@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../hooks/useAuth';
@@ -23,23 +22,30 @@ function  Dashboard() {
     search: ''
   });
 
-  useEffect(() => {
-    fetchTasks();
-  }, [filters]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = () => setRefreshKey((k) => k + 1);
 
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const data = await taskService.getTasks(filters);
-      setTasks(data);
-      setError('');
-    } catch (err: unknown) {
-      setError('Failed to fetch tasks');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    let cancelled = false;
+    taskService
+      .getTasks(filters)
+      .then((data) => {
+        if (cancelled) return;
+        setTasks(data);
+        setError('');
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setError('Failed to fetch tasks');
+        console.error(err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, refreshKey]);
 
   const handleLogout = () => {
     logout();
@@ -63,7 +69,7 @@ function  Dashboard() {
       } else {
         await taskService.createTask(data as CreateTaskData);
       }
-      await fetchTasks();
+      refresh();
       setShowModal(false);
       setEditingTask(null);
     } catch (err: any) {
@@ -75,7 +81,7 @@ function  Dashboard() {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
         await taskService.deleteTask(id);
-        await fetchTasks();
+        refresh();
       } catch (err: unknown) {
         setError('Failed to delete task: ' + err);
       }
