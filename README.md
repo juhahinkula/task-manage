@@ -291,6 +291,14 @@ This project is very similar to repositories used in many Docker tutorials. Howe
 
 There are numerous ways to structure Dockerfiles for monorepos and you can choose your approach based on your skills and preferences. In this case, creating separate Dockerfiles in both `backend` and `frontend` directories and copying only the service specific files into the images is a straightforward approach. In more complex repositories, where the services would actually share code, you might need a more advanced setup.
 
+The backend applies `src/db/schema.sql` at startup when `DB_SYNC=true` (or in development), so make sure the file is present in the runtime image at that path relative to the backend's working directory. For example, with the backend directory as the Docker build context and `WORKDIR /app`:
+
+```dockerfile
+COPY src/db/schema.sql ./src/db/schema.sql
+```
+
+In a multi-stage Dockerfile, copy the schema into the final image from the build stage, or copy it directly from the build context. If the file is omitted, the backend cannot apply the schema at startup.
+
 **Notes on networking:**
 
 When running the backend container, it needs to able to connect to the PostgreSQL database. Although we started a local PostgreSQL instance earlier, that container is not in the same Docker network as the backend container, so they cannot communicate by default. We recommend using Docker Compose to define and run all the services together in a single network.
