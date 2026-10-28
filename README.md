@@ -333,7 +333,7 @@ You can choose either **Path 1 (Manual deployment & CD workflow)** or **Path 2 (
       After deployment, review the render.com backend deployment logs for the following messages. These confirm a successful database connection and that the tables have been created.
       ```
       Database connection established successfully.
-      Database models synchronized.
+      Database schema applied.
       ```
       
       Check the backend health endpoint: `https://your-backend.onrender.com/api/health`
