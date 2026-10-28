@@ -159,6 +159,7 @@ In the deployment task later, you will set these environment variables in Render
 The backend has environment variables for connecting to the database, configuring JWT authentication, and specifying the frontend URL. 
 
 Update the `DATABASE_URL` variable to match your local PostgreSQL setup if necessary.
+The database schema is included at `backend/src/db/schema.sql` and is applied automatically when the backend starts in development mode.
 
 ```
 # The mode in which the application is running and the port it listens on:
@@ -425,4 +426,3 @@ Implement monitoring and health checks for your deployed application:
 Teachers will provide a link to the course self‑assessment form. All students must complete that form and submit it by the course deadline.
 
 In the self‑assessment there are own assessment for each project task. Ensure access permissions are correct. If any link points to a private resource, grant the teachers access or provide a downloadable alternative link.
-

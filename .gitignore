@@ -37,6 +37,7 @@ coverage/
 
 # Docker
 *.sql
+!backend/src/db/schema.sql
 docker-compose.override.yml
 
 # Database
